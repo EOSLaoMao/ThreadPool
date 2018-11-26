@@ -11,12 +11,12 @@
 #include <functional>
 #include <stdexcept>
 
-class ThreadPool {
+class ThreadPoolA {
 public:
-    ThreadPool(size_t);
+    ThreadPoolA(size_t);
     void enqueue(std::function<void(size_t)>&& f);
     size_t queue_size() { return task_queue_size; }
-    ~ThreadPool();
+    ~ThreadPoolA();
 private:
     // need to keep track of threads so we can join them
     std::vector< std::thread > workers;
@@ -31,7 +31,7 @@ private:
 };
  
 // the constructor just launches some amount of workers
-inline ThreadPool::ThreadPool(size_t threads)
+inline ThreadPoolA::ThreadPoolA(size_t threads)
     :task_queue_size(0), stop(false)
 {
     size_t i;
@@ -62,14 +62,14 @@ inline ThreadPool::ThreadPool(size_t threads)
 }
 
 // add new work item to the pool
-void ThreadPool::enqueue(std::function<void(size_t)>&& f)
+void ThreadPoolA::enqueue(std::function<void(size_t)>&& f)
 {
     {
         std::unique_lock<std::mutex> lock(queue_mutex);
 
         // don't allow enqueueing after stopping the pool
         if(stop)
-            throw std::runtime_error("enqueue on stopped ThreadPool");
+            throw std::runtime_error("enqueue on stopped ThreadPoolA");
 
         tasks.emplace(f);
         task_queue_size++;
@@ -78,7 +78,7 @@ void ThreadPool::enqueue(std::function<void(size_t)>&& f)
 }
 
 // the destructor joins all threads
-inline ThreadPool::~ThreadPool()
+inline ThreadPoolA::~ThreadPoolA()
 {
     {
         std::unique_lock<std::mutex> lock(queue_mutex);
