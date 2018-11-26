@@ -14,14 +14,14 @@
 class ThreadPool {
 public:
     ThreadPool(size_t);
-    void enqueue(std::function<void()>&& f);
+    void enqueue(std::function<void(size_t)>&& f);
     size_t queue_size() { return task_queue_size; }
     ~ThreadPool();
 private:
     // need to keep track of threads so we can join them
     std::vector< std::thread > workers;
     // the task queue
-    std::queue< std::function<void()> > tasks;
+    std::queue< std::function<void(size_t)> > tasks;
     size_t task_queue_size;
     
     // synchronization
@@ -34,13 +34,14 @@ private:
 inline ThreadPool::ThreadPool(size_t threads)
     :task_queue_size(0), stop(false)
 {
-    for(size_t i = 0;i<threads;++i)
+    size_t i;
+    for(i = 0;i<threads;++i)
         workers.emplace_back(
-            [this]
+            [i, this]
             {
                 for(;;)
                 {
-                    std::function<void()> task;
+                    std::function<void(size_t)> task;
 
                     {
                         std::unique_lock<std::mutex> lock(this->queue_mutex);
@@ -54,14 +55,14 @@ inline ThreadPool::ThreadPool(size_t threads)
                         task_queue_size--;
                     }
 
-                    task();
+                    task(i);
                 }
             }
         );
 }
 
 // add new work item to the pool
-void ThreadPool::enqueue(std::function<void()>&& f)
+void ThreadPool::enqueue(std::function<void(size_t)>&& f)
 {
     {
         std::unique_lock<std::mutex> lock(queue_mutex);
